@@ -522,30 +522,15 @@
 
   function renderLanding() {
     state.screen = "landing";
-    var careers = window.GEOMATCH_CAREERS || [];
-    var numCareers = careers.length;
-    var numClusters = uniq(careers.map(function (c) { return c.category; })).length;
 
     $("screen-landing").innerHTML =
-      '<div class="landing-wrap">' +
+      '<div class="landing-wrap landing-wrap-centered">' +
         '<div class="landing-main">' +
           '<p class="eyebrow">Geothermal Rising &middot; Career Discovery</p>' +
           '<h1 class="landing-headline">The heat beneath our feet becomes the power in our homes.<br><span class="headline-accent">It takes people from every field.</span></h1>' +
           '<p class="landing-sub">Discover where you fit in geothermal energy: careers, study pathways and next steps matched to your interests, skills and experience.</p>' +
           '<button type="button" class="btn btn-primary btn-large" id="start-btn">Start exploring</button>' +
           '<p class="landing-note">About 3 minutes &middot; No sign-up needed &middot; Email is optional</p>' +
-        '</div>' +
-        '<div class="landing-side">' +
-          '<div class="brand-motif" aria-hidden="true">' +
-            '<span class="motif-tri motif-cyan"></span>' +
-            '<span class="motif-arc motif-red"></span>' +
-            '<span class="motif-arc motif-orange"></span>' +
-            '<span class="motif-tri motif-yellow"></span>' +
-          '</div>' +
-          '<div class="stat-row">' +
-            '<div class="stat"><div class="stat-num">' + numCareers + '+</div><div class="stat-label">Career paths</div></div>' +
-            '<div class="stat"><div class="stat-num">' + numClusters + '</div><div class="stat-label">Career clusters</div></div>' +
-          '</div>' +
         '</div>' +
       '</div>';
 
