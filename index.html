@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GeoMatch – Geothermal Career Explorer</title>
+<meta name="description" content="Discover where you fit in geothermal energy: careers, study pathways and next steps matched to your interests, skills and experience." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;700;800;900&family=Red+Hat+Text:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="#" class="logo-wrap" id="logo-home-link" aria-label="GeoMatch home">
+    <img src="assets/geothermal-rising-logo.png" alt="Geothermal Rising" class="logo-img" id="logo-img" />
+    <span class="logo-wordmark" id="logo-wordmark">GEOTHERMAL RISING</span>
+    <span class="product-name">GeoMatch</span>
+  </a>
+</header>
+
+<main id="app-main">
+  <section id="screen-landing" class="screen"></section>
+  <section id="screen-question" class="screen"></section>
+  <section id="screen-results" class="screen"></section>
+  <section id="screen-admin" class="screen"></section>
+</main>
+
+<div id="idle-overlay" class="idle-overlay" hidden>
+  <div class="idle-card" role="alertdialog" aria-live="assertive" aria-label="Still there?">
+    <p class="idle-title">Still there?</p>
+    <p class="idle-sub">We'll return to the start screen in a few seconds to keep this device ready for the next person.</p>
+    <button type="button" id="idle-continue-btn" class="btn btn-primary">Tap to keep going</button>
+  </div>
+</div>
+
+<div id="privacy-modal" class="modal-overlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
+    <button type="button" class="modal-close" id="privacy-modal-close-btn" aria-label="Close">&times;</button>
+    <h2 id="privacy-modal-title">How we use your email</h2>
+    <div id="privacy-modal-body"></div>
+  </div>
+</div>
+
+<div id="pin-modal" class="modal-overlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
+    <h2 id="pin-modal-title">Staff view &middot; this device only</h2>
+    <p>Enter the staff PIN to continue.</p>
+    <label class="field-label" for="pin-input">Staff PIN</label>
+    <input type="password" id="pin-input" inputmode="numeric" autocomplete="off" class="text-input" />
+    <div id="pin-error" class="field-error" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button type="button" id="pin-cancel-btn" class="btn btn-secondary">Back to app</button>
+      <button type="button" id="pin-submit-btn" class="btn btn-primary">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script src="data/careers.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
