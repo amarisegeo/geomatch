@@ -10,8 +10,8 @@
 
   var CONFIG = {
     idleSeconds: 180,
-    analyticsEndpoint: "",
-    emailEndpoint: "",
+    analyticsEndpoint: "https://script.google.com/macros/s/AKfycbxZZfdsUkH1ntV15XpQwcYq8Jvd8Y4ky-UjiGWGgQ_qr4F2lhRRMd-Bg7_aj2f11WJNZw/exec",
+    emailEndpoint: "https://script.google.com/macros/s/AKfycbxZZfdsUkH1ntV15XpQwcYq8Jvd8Y4ky-UjiGWGgQ_qr4F2lhRRMd-Bg7_aj2f11WJNZw/exec",
     adminPin: "1234",
     privacyContact: "amarise@geothermal.org"
   };
