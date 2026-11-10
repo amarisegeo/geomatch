@@ -410,6 +410,18 @@ img { max-width: 100%; display: block; }
 .training-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .next-steps-list li { font-size: 15px; padding: 6px 0 6px 18px; }
 
+.job-board-link { margin-top: 16px; font-weight: 600; }
+.job-board-link .ext-link { color: var(--dark-red); text-decoration: none; }
+.job-board-link .ext-link:hover { text-decoration: underline; }
+
+.interest-after-title { font-size: 17px; margin-bottom: 16px; }
+.interest-after-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+.interest-after-btn.selected { border-color: var(--orange); border-width: 2px; background: #fff6ea; }
+.interest-after-thanks { margin-top: 12px; font-weight: 700; color: #3f7b69; }
+.interest-after-thanks[hidden] { display: none; }
+
+.ext-link { color: var(--dark-red); }
+
 .disclaimer-footer {
   text-align: center;
   color: var(--text-secondary);
@@ -498,7 +510,14 @@ img { max-width: 100%; display: block; }
 
 @media print {
   .topbar, .idle-overlay, .modal-overlay, .hero-actions, .email-panel, .qr-panel,
-  .disclaimer-footer, #screen-landing, #screen-question, #screen-admin { display: none !important; }
+  .interest-after-card, .disclaimer-footer, #screen-landing, #screen-question, #screen-admin { display: none !important; }
+
+  .ext-link::after {
+    content: " (" attr(href) ")";
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--black);
+  }
 
   body { background: var(--white); color: var(--black); }
 

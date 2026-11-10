@@ -13,7 +13,17 @@
     analyticsEndpoint: "https://script.google.com/macros/s/AKfycbxZZfdsUkH1ntV15XpQwcYq8Jvd8Y4ky-UjiGWGgQ_qr4F2lhRRMd-Bg7_aj2f11WJNZw/exec",
     emailEndpoint: "https://script.google.com/macros/s/AKfycbxZZfdsUkH1ntV15XpQwcYq8Jvd8Y4ky-UjiGWGgQ_qr4F2lhRRMd-Bg7_aj2f11WJNZw/exec",
     adminPin: "1234",
-    privacyContact: "amarise@geothermal.org"
+    privacyContact: "amarise@geothermal.org",
+    middleSchoolEmail: true,
+    links: {
+      jobBoard: "https://www.geothermal.org/resources/job-board",
+      geothermalRising: "https://www.geothermal.org",
+      studentResources: "https://www.geothermal.org/index.php/resources/students",
+      studentCommittee: "https://www.geothermal.org/index.php/our-organization/geothermal-rising-student-committee",
+      membership: "https://www.geothermal.org/index.php/our-organization/membership",
+      events: "https://www.geothermal.org/events",
+      learn: ""
+    }
   };
 
   /* ============================== Helpers ============================== */
@@ -37,6 +47,13 @@
     return a.filter(function (x) { return b.indexOf(x) > -1; });
   }
   function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function joinAnd(arr) {
+    if (!arr || !arr.length) return "";
+    if (arr.length === 1) return arr[0];
+    if (arr.length === 2) return arr[0] + " and " + arr[1];
+    return arr.slice(0, -1).join(", ") + ", and " + arr[arr.length - 1];
+  }
 
   function safeLocalStorageGet(key, fallback) {
     try {
@@ -80,6 +97,17 @@
   };
   var SUBJECT_OPTIONS = Object.keys(SUBJECT_FIELD_MAP);
 
+  var MS_SUBJECT_FIELD_MAP = {
+    "Math": ["Mathematics", "Data Science", "Finance"],
+    "Science": ["Geology", "Earth Science", "Environmental Science", "Physics", "Chemistry", "Biology"],
+    "English & Media": ["Communications", "Marketing", "Education"],
+    "Social Studies & Government": ["Public Policy", "Law", "Geography"],
+    "Computer Science": ["Computer Science", "Data Science"],
+    "Design & Technology": ["Mechanical Engineering", "Civil Engineering", "Technical / Trades Program"]
+  };
+  var MS_SUBJECT_OPTIONS = Object.keys(MS_SUBJECT_FIELD_MAP);
+  var MS_SUBJECT_HINTS = { "Design & Technology": "Building, making or shop class" };
+
   var FIELD_OPTIONS = [
     "Geology", "Geophysics", "Earth Science", "Geography", "Environmental Science", "Biology", "Chemistry",
     "Physics", "Mathematics", "Computer Science", "Data Science", "Mechanical Engineering", "Electrical Engineering",
@@ -93,17 +121,17 @@
   ];
 
   var SCENARIO_OPTIONS = [
-    { label: "Find out whether there's enough heat underground to justify a project", clusters: ["Exploration & Earth Sciences", "Reservoir Engineering"] },
-    { label: "Plan and drill wells that reach hot rock kilometres below the surface", clusters: ["Drilling & Well Construction"] },
-    { label: "Design the plant that turns hot fluid into electricity", clusters: ["Mechanical Engineering", "Electrical Engineering", "Chemical & Process Engineering"] },
-    { label: "Run and maintain the plant once it's generating power", clusters: ["Plant Operations & Maintenance", "Skilled Trades"] },
-    { label: "Build the roads, well pads and pipelines on site", clusters: ["Civil Engineering", "Skilled Trades"] },
-    { label: "Use the heat directly for buildings, greenhouses or industry", clusters: ["Heat Pumps & Direct Use"] },
-    { label: "Protect the local environment and assess project impacts", clusters: ["Environmental & Sustainability"] },
-    { label: "Secure the funding, contracts and supportive policies", clusters: ["Business & Commercial", "Policy & Law", "Leadership & Management"] },
-    { label: "Build the data systems and models that monitor everything", clusters: ["Data & Digital Technology"] },
-    { label: "Research new technology so geothermal can work almost anywhere", clusters: ["Research & Academia"] },
-    { label: "Explain the project to communities, schools and decision-makers", clusters: ["Communications, Outreach & Education"] }
+    { id: "find-heat", label: "Find out whether there's enough heat underground to justify a project", labelMS: "Find where the Earth's heat is hiding underground", short: "find geothermal heat underground", clusters: ["Exploration & Earth Sciences", "Reservoir Engineering"] },
+    { id: "drill-wells", label: "Plan and drill wells that reach hot rock kilometres below the surface", labelMS: "Drill deep holes to reach the hot rock", short: "drill geothermal wells", clusters: ["Drilling & Well Construction"] },
+    { id: "design-plant", label: "Design the plant that turns hot fluid into electricity", labelMS: "Design the machines that turn heat into electricity", short: "design the power plant", clusters: ["Mechanical Engineering", "Electrical Engineering", "Chemical & Process Engineering"] },
+    { id: "run-plant", label: "Run and maintain the plant once it's generating power", labelMS: "Keep the power plant running every day", short: "keep the plant running", clusters: ["Plant Operations & Maintenance", "Skilled Trades"] },
+    { id: "build-site", label: "Build the roads, well pads and pipelines on site", labelMS: "Build the roads, pipes and buildings", short: "build the site and pipelines", clusters: ["Civil Engineering", "Skilled Trades"] },
+    { id: "direct-use", label: "Use the heat directly for buildings, greenhouses or industry", labelMS: "Use the Earth's heat to warm buildings or grow food in greenhouses", short: "use geothermal heat directly", clusters: ["Heat Pumps & Direct Use"] },
+    { id: "protect-environment", label: "Protect the local environment and assess project impacts", labelMS: "Protect the plants, animals and water nearby", short: "protect the environment", clusters: ["Environmental & Sustainability"] },
+    { id: "funding-policy", label: "Secure the funding, contracts and supportive policies", labelMS: "Plan the money and the rules", short: "handle the funding and policy", clusters: ["Business & Commercial", "Policy & Law", "Leadership & Management"] },
+    { id: "data-systems", label: "Build the data systems and models that monitor everything", labelMS: "Use computers to keep watch over everything", short: "build data systems", clusters: ["Data & Digital Technology"] },
+    { id: "research-tech", label: "Research new technology so geothermal can work almost anywhere", labelMS: "Invent new ways to use the Earth's heat", short: "research new technology", clusters: ["Research & Academia"] },
+    { id: "explain-community", label: "Explain the project to communities, schools and decision-makers", labelMS: "Tell the community about the project", short: "explain the project to communities", clusters: ["Communications, Outreach & Education"] }
   ];
 
   var INTEREST_OPTIONS = [
@@ -121,20 +149,57 @@
     "Field sites", "Power plant", "Lab", "Construction site", "Office", "Remote / hybrid", "University",
     "Government", "Community settings"
   ];
+  var ENVIRONMENT_MS_LABELS = {
+    "Field sites": "Outdoors in nature", "Power plant": "At a power plant", "Lab": "In a science lab",
+    "Construction site": "On building sites", "Office": "In an office", "Remote / hybrid": "On a computer from anywhere",
+    "University": "At a university", "Community settings": "Out in the community"
+  };
+  var ENV_PHRASES = {
+    "Field sites": "outdoors at field sites", "Power plant": "at a power plant", "Lab": "in a lab",
+    "Construction site": "on construction sites", "Office": "in an office", "Remote / hybrid": "remotely",
+    "University": "at a university", "Government": "in government", "Community settings": "in the community"
+  };
 
   var FAMILIARITY_OPTIONS = [
     "Not at all", "I'd heard of it", "I knew the basics", "I've studied or worked in it"
   ];
 
+  var FREE_TIME_OPTIONS = [
+    { label: "Camping, hiking or exploring outdoors", short: "exploring outdoors", weight: 1, clusters: ["Exploration & Earth Sciences", "Environmental & Sustainability"] },
+    { label: "Playing video games", short: "video games", weight: 1, clusters: ["Data & Digital Technology"] },
+    { label: "Coding or making apps and websites", short: "coding", weight: 1, clusters: ["Data & Digital Technology"] },
+    { label: "Building or fixing things (LEGO, bikes, models)", short: "building and fixing things", weight: 1, clusters: ["Skilled Trades", "Mechanical Engineering", "Civil Engineering"] },
+    { label: "Science kits and experiments", short: "science experiments", weight: 1, clusters: ["Research & Academia", "Chemical & Process Engineering"] },
+    { label: "Puzzles, chess or brain teasers", short: "puzzles", weight: 1, clusters: ["Reservoir Engineering", "Data & Digital Technology"] },
+    { label: "Making videos, drawing or posting content", short: "making videos and content", weight: 1, clusters: ["Communications, Outreach & Education"] },
+    { label: "Gardening, nature or caring for animals", short: "nature and animals", weight: 1, clusters: ["Environmental & Sustainability", "Heat Pumps & Direct Use"] },
+    { label: "Helping people or volunteering", short: "helping people", weight: 1, clusters: ["Communications, Outreach & Education", "Environmental & Sustainability"] },
+    { label: "Debating, student council or clubs", short: "debating and clubs", weight: 1, clusters: ["Policy & Law", "Leadership & Management"] },
+    { label: "Selling things or running a small business", short: "running a business", weight: 1, clusters: ["Business & Commercial"] },
+    { label: "Sports and team activities", short: "team sports", weight: 0.5, clusters: ["Leadership & Management", "Plant Operations & Maintenance"] }
+  ];
+
   var SECTOR_CONTEXT = {
-    1: "Geothermal energy uses heat from inside the Earth to generate electricity and to heat and cool buildings. Delivering it takes scientists, engineers, tradespeople, analysts, lawyers and communicators.",
-    2: "Geothermal projects operate across the Americas, Africa, Asia-Pacific and Europe. Next-generation approaches such as enhanced geothermal systems (EGS) and closed-loop designs aim to extend it far beyond traditional volcanic regions.",
-    3: "Many skills transfer directly. Geothermal drilling and reservoir engineering draw heavily on oil & gas techniques, and plant operations draw on the wider power sector.",
-    4: "A geothermal project moves through stages: exploration, drilling, plant design and construction, then decades of operation. Each stage needs different people.",
-    5: "Geothermal power is firm, or 'baseload': it generates around the clock regardless of weather, which makes it a strong partner to solar and wind.",
-    6: "Not all geothermal is electricity. Direct use applies the heat itself to greenhouses, food drying, aquaculture and district heating, and ground-source heat pumps can heat and cool buildings almost anywhere.",
-    7: "Many geothermal careers mix settings. A geologist might spend weeks mapping in the field and months modelling in an office.",
-    8: "This question isn't scored. It helps Geothermal Rising understand how much people learn from GeoMatch."
+    careerStage: "Geothermal energy uses heat from inside the Earth to generate electricity and to heat and cool buildings. Delivering it takes scientists, engineers, tradespeople, analysts, lawyers and communicators.",
+    region: "Geothermal projects operate across the Americas, Africa, Asia-Pacific and Europe. Next-generation approaches such as enhanced geothermal systems (EGS) and closed-loop designs aim to extend it far beyond traditional volcanic regions.",
+    subjects: "Many skills transfer directly. Geothermal drilling and reservoir engineering draw heavily on oil & gas techniques, and plant operations draw on the wider power sector.",
+    field: "Many skills transfer directly. Geothermal drilling and reservoir engineering draw heavily on oil & gas techniques, and plant operations draw on the wider power sector.",
+    industry: "Many skills transfer directly. Geothermal drilling and reservoir engineering draw heavily on oil & gas techniques, and plant operations draw on the wider power sector.",
+    scenario: "A geothermal project moves through stages: exploration, drilling, plant design and construction, then decades of operation. Each stage needs different people.",
+    interests: "Geothermal power is firm, or 'baseload': it generates around the clock regardless of weather, which makes it a strong partner to solar and wind.",
+    activities: "Not all geothermal is electricity. Direct use applies the heat itself to greenhouses, food drying, aquaculture and district heating, and ground-source heat pumps can heat and cool buildings almost anywhere.",
+    environments: "Many geothermal careers mix settings. A geologist might spend weeks mapping in the field and months modelling in an office.",
+    familiarity: "This question isn't scored. It helps Geothermal Rising understand how much people learn from GeoMatch."
+  };
+
+  var SECTOR_CONTEXT_MS = {
+    careerStage: "Geothermal energy uses heat from inside the Earth to make electricity and to heat and cool buildings. All kinds of people help make it happen.",
+    region: "Geothermal projects happen all over the world, from the Americas to Africa, Asia and Europe.",
+    subjects: "The subjects you enjoy now can connect to real geothermal jobs later.",
+    freeTime: "Lots of geothermal jobs connect to things you might already enjoy, like exploring outdoors, building things or working with computers.",
+    scenario: "Building a geothermal power plant takes many steps and many kinds of jobs, from finding the heat to telling people about it.",
+    environments: "Geothermal jobs happen in lots of different places — outdoors, in offices, in labs and at power plants.",
+    familiarity: "This question isn't scored. It just helps Geothermal Rising understand how much people learn from GeoMatch."
   };
 
   var CLUSTERS = [
@@ -180,8 +245,72 @@
     "Certification": "Industry certification",
     "Experience": "On-the-job experience"
   };
+  var ENTRY_ROUTE_LABELS_MS = {
+    "Degree": "University degree",
+    "Diploma": "College diploma",
+    "Apprenticeship": "Apprenticeship",
+    "Certification": "Industry certification",
+    "Experience": "Degree, then work experience"
+  };
 
   var WEIGHTS = { field: 6, industry: 6, interest: 4, activity: 3, environment: 2, scenario: 5 };
+
+  /* ============================== "Why" sentence building (Section 7) ============================== */
+
+  var REASON_PHRASE = {
+    scenario: function (raws) { return "you want to " + joinAnd(raws); },
+    interest: function (raws) { return "you're interested in " + joinAnd(raws); },
+    activity: function (raws) { return "you enjoy " + joinAnd(raws.map(function (r) { return r.toLowerCase(); })); },
+    environment: function (raws) { return "you'd like to work " + joinAnd(raws.map(function (r) { return ENV_PHRASES[r] || r; })); },
+    subject: function (raws) { return "you like " + joinAnd(raws); },
+    field: function (raws) { return "of your background in " + joinAnd(raws); },
+    industry: function (raws) { return "of your experience in " + joinAnd(raws); },
+    freeTime: function (raws) { return "you like " + joinAnd(raws); }
+  };
+
+  function groupReasons(items) {
+    var order = [], groups = {};
+    items.forEach(function (it) {
+      if (!groups[it.type]) { groups[it.type] = []; order.push(it.type); }
+      if (groups[it.type].indexOf(it.raw) === -1) groups[it.type].push(it.raw);
+    });
+    return order.map(function (type) { return { type: type, raws: groups[type] }; });
+  }
+
+  function sentenceFromGroups(groups) {
+    if (!groups.length) return null;
+    var phrases = groups.map(function (g) { return REASON_PHRASE[g.type](g.raws); });
+    var leadIsBackground = groups[0].type === "field" || groups[0].type === "industry";
+    var sentence;
+    if (leadIsBackground) {
+      var rest = phrases.slice(1);
+      sentence = "Because " + phrases[0] + (rest.length ? ", " + joinAnd(rest) : "");
+    } else {
+      sentence = joinAnd(phrases);
+    }
+    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    if (!/[.!?]$/.test(sentence)) sentence += ".";
+    return sentence;
+  }
+
+  function sentenceFromTopItems(items) {
+    // items already capped (top 3 by points), each {type, raw}
+    return sentenceFromGroups(groupReasons(items));
+  }
+
+  function sentenceFromAllItems(items) {
+    // group first, then cap groups at 3
+    return sentenceFromGroups(groupReasons(items).slice(0, 3));
+  }
+
+  function fieldReasonFor(fieldName) {
+    if (state.careerStageGroup === "school") {
+      var map = isMiddleSchool() ? MS_SUBJECT_FIELD_MAP : SUBJECT_FIELD_MAP;
+      var subj = (state.answers.subjects || []).filter(function (s) { return (map[s] || []).indexOf(fieldName) > -1; })[0];
+      return { type: "subject", raw: subj || fieldName };
+    }
+    return { type: "field", raw: fieldName };
+  }
 
   /* ============================== Data validation ============================== */
 
@@ -277,59 +406,87 @@
     followUp: false,
     guardianConsent: false,
     emailSendCount: 0,
-    multiSelectWarning: {},
+    interestAfter: null,
     lastStepReached: 0
   };
 
-  var TOTAL_STEPS = 8;
+  function isMiddleSchool() { return state.answers.careerStage === "Middle School"; }
 
   function stageGroupFor(stageLabel) {
     var opt = STAGE_OPTIONS.filter(function (o) { return o.label === stageLabel; })[0];
     return opt ? opt.group : null;
   }
 
+  /* ============================== Step list (dynamic) ============================== */
+
+  function getStepList() {
+    var stage = state.answers.careerStage;
+    var group = stageGroupFor(stage);
+    var step3id = group === "professional" ? "industry" : (group === "tertiary" ? "field" : "subjects");
+    var list = ["careerStage", "region", step3id];
+    if (isMiddleSchool()) {
+      list.push("freeTime", "scenario", "environments", "familiarity");
+    } else {
+      list.push("scenario", "interests", "activities", "environments", "familiarity");
+    }
+    return list;
+  }
+
+  function totalSteps() { return getStepList().length; }
+
+  function getSectorContext(id) {
+    if (isMiddleSchool() && SECTOR_CONTEXT_MS[id]) return SECTOR_CONTEXT_MS[id];
+    return SECTOR_CONTEXT[id] || "";
+  }
+
   /* ============================== Step definitions ============================== */
 
-  function getStepDefinition(stepNumber) {
-    switch (stepNumber) {
-      case 1:
-        return { id: "careerStage", title: "Where are you right now?", type: "single", options: STAGE_OPTIONS.map(function (o) { return { label: o.label, hint: o.hint }; }) };
-      case 2:
-        return { id: "region", title: "Where in the world are you?", type: "single", options: REGION_OPTIONS.map(function (l) { return { label: l }; }) };
-      case 3:
-        return getStep3Definition();
-      case 4:
-        return { id: "scenario", title: "A new geothermal project is being developed. Which part would you most want to work on?", type: "single", wide: true, options: SCENARIO_OPTIONS.map(function (o) { return { label: o.label }; }) };
-      case 5:
-        return { id: "interests", title: "What are you interested in?", type: "multi", max: 5, options: INTEREST_OPTIONS.map(function (l) { return { label: l }; }) };
-      case 6:
-        return { id: "activities", title: "Which kinds of work would you enjoy?", type: "multi", max: 5, options: ACTIVITY_OPTIONS.map(function (l) { return { label: l }; }) };
-      case 7:
-        return { id: "environments", title: "Where would you like to work?", type: "multi", max: 3, options: ENVIRONMENT_OPTIONS.map(function (l) { return { label: l }; }) };
-      case 8:
-        return { id: "familiarity", title: "Before today, how familiar were you with geothermal energy?", type: "single", notScored: true, options: FAMILIARITY_OPTIONS.map(function (l) { return { label: l }; }) };
+  function getStepDefinitionById(id) {
+    switch (id) {
+      case "careerStage":
+        return { id: "careerStage", title: "Where are you right now?", type: "single", options: STAGE_OPTIONS.map(function (o) { return { value: o.label, label: o.label, hint: o.hint }; }) };
+      case "region":
+        return { id: "region", title: "Where in the world are you?", type: "single", options: REGION_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
+      case "subjects":
+        if (isMiddleSchool()) {
+          return {
+            id: "subjects", title: "Which subjects do you enjoy most?", type: "multi", max: 2,
+            options: MS_SUBJECT_OPTIONS.map(function (l) { return { value: l, label: l, hint: MS_SUBJECT_HINTS[l] || "" }; })
+          };
+        }
+        return { id: "subjects", title: "Which subjects do you enjoy or do best in?", type: "multi", max: 2, options: SUBJECT_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
+      case "field":
+        return { id: "field", title: "What is your field of study?", type: "single", options: FIELD_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
+      case "industry":
+        return {
+          id: "industry", title: "Which industry or field are you coming from?", type: "single",
+          options: INDUSTRY_OPTIONS.map(function (l) { return { value: l, label: l, hint: (l !== "Other" && TRANSITION_MAP[l]) ? "Strong transfer path" : "" }; })
+        };
+      case "freeTime":
+        return { id: "freeTime", title: "What do you like doing in your free time?", type: "multi", max: 3, options: FREE_TIME_OPTIONS.map(function (o) { return { value: o.label, label: o.label }; }) };
+      case "scenario":
+        return {
+          id: "scenario",
+          title: isMiddleSchool() ? "A town is building a new geothermal power plant. Which jobs would you like to help with?" : "A new geothermal project is being developed. Which part would you most want to work on?",
+          type: "multi", max: 2, wide: true,
+          options: SCENARIO_OPTIONS.map(function (o) { return { value: o.id, label: isMiddleSchool() ? o.labelMS : o.label }; })
+        };
+      case "interests":
+        return { id: "interests", title: "What are you interested in?", type: "multi", max: 5, options: INTEREST_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
+      case "activities":
+        return { id: "activities", title: "Which kinds of work would you enjoy?", type: "multi", max: 5, options: ACTIVITY_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
+      case "environments": {
+        var envList = isMiddleSchool() ? ENVIRONMENT_OPTIONS.filter(function (e) { return e !== "Government"; }) : ENVIRONMENT_OPTIONS;
+        return {
+          id: "environments", title: "Where would you like to work?", type: "multi", max: 3,
+          options: envList.map(function (e) { return { value: e, label: isMiddleSchool() ? (ENVIRONMENT_MS_LABELS[e] || e) : e }; })
+        };
+      }
+      case "familiarity":
+        return { id: "familiarity", title: "Before today, how familiar were you with geothermal energy?", type: "single", notScored: true, options: FAMILIARITY_OPTIONS.map(function (l) { return { value: l, label: l }; }) };
       default:
         return null;
     }
-  }
-
-  function getStep3Definition() {
-    var group = state.careerStageGroup;
-    if (group === "school") {
-      return { id: "subjects", title: "Which subjects do you enjoy or do best in?", type: "multi", max: 2, options: SUBJECT_OPTIONS.map(function (l) { return { label: l }; }) };
-    }
-    if (group === "professional") {
-      return {
-        id: "industry",
-        title: "Which industry or field are you coming from?",
-        type: "single",
-        options: INDUSTRY_OPTIONS.map(function (l) {
-          return { label: l, hint: (l !== "Other" && TRANSITION_MAP[l]) ? "Strong transfer path" : "" };
-        })
-      };
-    }
-    // tertiary (default)
-    return { id: "field", title: "What is your field of study?", type: "single", options: FIELD_OPTIONS.map(function (l) { return { label: l }; }) };
   }
 
   /* ============================== Scoring engine ============================== */
@@ -337,9 +494,10 @@
   function getUserFields() {
     var group = state.careerStageGroup;
     if (group === "school") {
+      var map = isMiddleSchool() ? MS_SUBJECT_FIELD_MAP : SUBJECT_FIELD_MAP;
       var fields = [];
       (state.answers.subjects || []).forEach(function (subject) {
-        (SUBJECT_FIELD_MAP[subject] || []).forEach(function (f) { fields.push(f); });
+        (map[subject] || []).forEach(function (f) { fields.push(f); });
       });
       return uniq(fields);
     }
@@ -355,19 +513,19 @@
     CLUSTERS.forEach(function (c) { clusterScores[c.name] = 0; contributions[c.name] = []; });
     var maxPossible = 0;
 
-    function addShare(tagType, tagValue, weight) {
+    function addShare(type, tagType, tagValue, weight) {
       maxPossible += weight;
       CLUSTERS.forEach(function (cluster) {
         var share = (clusterProfiles[cluster.name][tagType] || {})[tagValue] || 0;
         if (share > 0) {
           var pts = weight * share;
           clusterScores[cluster.name] += pts;
-          contributions[cluster.name].push({ label: tagValue, points: pts });
+          contributions[cluster.name].push({ type: type, raw: tagValue, points: pts });
         }
       });
     }
 
-    // Field (best single matching field — no double counting)
+    // Field / subject (best single matching field — no double counting)
     var userFields = getUserFields();
     if (userFields.length) {
       maxPossible += WEIGHTS.field;
@@ -380,7 +538,8 @@
         if (bestShare > 0) {
           var pts = WEIGHTS.field * bestShare;
           clusterScores[cluster.name] += pts;
-          contributions[cluster.name].push({ label: bestField, points: pts });
+          var reason = fieldReasonFor(bestField);
+          contributions[cluster.name].push({ type: reason.type, raw: reason.raw, points: pts });
         }
       });
     }
@@ -394,26 +553,41 @@
         if (share > 0) {
           var pts = WEIGHTS.industry * share;
           clusterScores[cluster.name] += pts;
-          contributions[cluster.name].push({ label: industry, points: pts });
+          contributions[cluster.name].push({ type: "industry", raw: industry, points: pts });
         }
       });
     }
 
-    // Scenario (flat +weight to each listed cluster)
-    if (state.answers.scenario) {
+    // Scenario (multi, up to 2; total weight 5 split evenly across picks; flat to each listed cluster)
+    var scenarioPicks = state.answers.scenario || [];
+    if (scenarioPicks.length) {
       maxPossible += WEIGHTS.scenario;
-      var scenarioOpt = SCENARIO_OPTIONS.filter(function (o) { return o.label === state.answers.scenario; })[0];
-      if (scenarioOpt) {
-        scenarioOpt.clusters.forEach(function (clusterName) {
-          clusterScores[clusterName] += WEIGHTS.scenario;
-          contributions[clusterName].push({ label: state.answers.scenario, points: WEIGHTS.scenario });
+      var perPick = WEIGHTS.scenario / scenarioPicks.length;
+      scenarioPicks.forEach(function (scenarioId) {
+        var opt = SCENARIO_OPTIONS.filter(function (o) { return o.id === scenarioId; })[0];
+        if (!opt) return;
+        opt.clusters.forEach(function (clusterName) {
+          clusterScores[clusterName] += perPick;
+          contributions[clusterName].push({ type: "scenario", raw: opt.short, points: perPick });
         });
-      }
+      });
     }
 
-    (state.answers.interests || []).forEach(function (i) { addShare("interests", i, WEIGHTS.interest); });
-    (state.answers.activities || []).forEach(function (a) { addShare("activities", a, WEIGHTS.activity); });
-    (state.answers.environments || []).forEach(function (e) { addShare("environments", e, WEIGHTS.environment); });
+    // Free time (Middle School only)
+    (state.answers.freeTime || []).forEach(function (label) {
+      var item = FREE_TIME_OPTIONS.filter(function (o) { return o.label === label; })[0];
+      if (!item) return;
+      var eff = 3 * item.weight;
+      maxPossible += eff;
+      item.clusters.forEach(function (clusterName) {
+        clusterScores[clusterName] += eff;
+        contributions[clusterName].push({ type: "freeTime", raw: item.short, points: eff });
+      });
+    });
+
+    (state.answers.interests || []).forEach(function (i) { addShare("interest", "interests", i, WEIGHTS.interest); });
+    (state.answers.activities || []).forEach(function (a) { addShare("activity", "activities", a, WEIGHTS.activity); });
+    (state.answers.environments || []).forEach(function (e) { addShare("environment", "environments", e, WEIGHTS.environment); });
 
     return { clusterScores: clusterScores, contributions: contributions, maxPossible: maxPossible, userFields: userFields };
   }
@@ -423,13 +597,15 @@
     return clamp(Math.round((clusterScore / maxPossible) * 100), 0, 99);
   }
 
-  function rankCareers(scoring) {
+  function rankCareers(scoring, limit) {
+    limit = limit || 5;
     var careers = window.GEOMATCH_CAREERS || [];
     var clusterScores = scoring.clusterScores;
     var topClusterScore = 0;
     Object.keys(clusterScores).forEach(function (k) { if (clusterScores[k] > topClusterScore) topClusterScore = clusterScores[k]; });
 
     var industry = (state.careerStageGroup === "professional" && state.answers.industry !== "Other") ? state.answers.industry : null;
+    var freeTimePicks = state.answers.freeTime || [];
 
     var scored = careers.map(function (career) {
       var clusterPts = clusterScores[career.category] || 0;
@@ -439,13 +615,20 @@
       var matchedEnvironments = overlap(state.answers.environments, career.environments);
       var matchedField = scoring.userFields.filter(function (f) { return (career.fields || []).indexOf(f) > -1; })[0] || null;
       var industryMatches = !!(industry && (career.industries_transferable_from || []).indexOf(industry) > -1);
+      var matchedFreeTime = freeTimePicks.filter(function (label) {
+        var item = FREE_TIME_OPTIONS.filter(function (o) { return o.label === label; })[0];
+        return item && item.clusters.indexOf(career.category) > -1;
+      }).map(function (label) {
+        return FREE_TIME_OPTIONS.filter(function (o) { return o.label === label; })[0].short;
+      });
 
       var score = clusterTerm
         + 2.5 * matchedInterests.length
         + 2 * matchedActivities.length
         + 1.2 * matchedEnvironments.length
         + (matchedField ? 3 : 0)
-        + (industryMatches ? 4 : 0);
+        + (industryMatches ? 4 : 0)
+        + 2.5 * matchedFreeTime.length;
 
       return {
         career: career,
@@ -454,14 +637,15 @@
         matchedActivities: matchedActivities,
         matchedEnvironments: matchedEnvironments,
         matchedField: matchedField,
-        industryMatches: industryMatches
+        industryMatches: industryMatches,
+        matchedFreeTime: matchedFreeTime
       };
     });
 
     scored.sort(function (a, b) { return b.score - a.score; });
 
     var top = [], perCategory = {};
-    for (var i = 0; i < scored.length && top.length < 5; i++) {
+    for (var i = 0; i < scored.length && top.length < limit; i++) {
       var item = scored[i];
       var cat = item.career.category;
       perCategory[cat] = perCategory[cat] || 0;
@@ -470,6 +654,20 @@
       top.push(item);
     }
     return top;
+  }
+
+  function careerWhySentence(item) {
+    var raws = [];
+    item.matchedInterests.forEach(function (r) { raws.push({ type: "interest", raw: r }); });
+    item.matchedActivities.forEach(function (r) { raws.push({ type: "activity", raw: r }); });
+    item.matchedEnvironments.forEach(function (r) { raws.push({ type: "environment", raw: r }); });
+    item.matchedFreeTime.forEach(function (r) { raws.push({ type: "freeTime", raw: r }); });
+    if (item.matchedField) {
+      var reason = fieldReasonFor(item.matchedField);
+      raws.push({ type: reason.type, raw: reason.raw });
+    }
+    if (item.industryMatches) raws.push({ type: "industry", raw: state.answers.industry });
+    return sentenceFromAllItems(raws);
   }
 
   /* ============================== Rendering: shared ============================== */
@@ -515,6 +713,7 @@
     state.followUp = false;
     state.guardianConsent = false;
     state.emailSendCount = 0;
+    state.interestAfter = null;
     state.lastStepReached = 0;
   }
 
@@ -550,8 +749,12 @@
 
   function renderQuestion() {
     state.screen = "question";
-    var def = getStepDefinition(state.step);
+    var stepList = getStepList();
+    if (state.step > stepList.length) state.step = stepList.length;
+    var id = stepList[state.step - 1];
+    var def = getStepDefinitionById(id);
     var answer = state.answers[def.id];
+    var total = stepList.length;
 
     var optionsHtml = def.options.map(function (opt) {
       return renderOptionButton(def, opt, answer);
@@ -562,23 +765,23 @@
     $("screen-question").innerHTML =
       '<div class="question-wrap">' +
         '<div class="question-main">' +
-          '<div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="' + TOTAL_STEPS + '" aria-valuenow="' + state.step + '" aria-label="Step ' + state.step + ' of ' + TOTAL_STEPS + '">' +
-            '<div class="progress-fill" style="width:' + Math.round((state.step / TOTAL_STEPS) * 100) + '%"></div>' +
+          '<div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + state.step + '" aria-label="Step ' + state.step + ' of ' + total + '">' +
+            '<div class="progress-fill" style="width:' + Math.round((state.step / total) * 100) + '%"></div>' +
           '</div>' +
-          '<p class="step-label">Step ' + state.step + ' of ' + TOTAL_STEPS + '</p>' +
+          '<p class="step-label">Step ' + state.step + ' of ' + total + '</p>' +
           '<h2 class="question-title">' + esc(def.title) + '</h2>' +
           (def.type === "multi" ? '<p class="multi-hint">Choose up to ' + def.max + '.</p>' : '') +
           '<div class="option-list ' + (def.wide ? "option-list-wide" : "") + '" role="' + groupRole + '" aria-label="' + esc(def.title) + '">' + optionsHtml + '</div>' +
           '<div class="selection-message" id="selection-message" aria-live="polite"></div>' +
           '<div class="step-nav">' +
             '<button type="button" class="btn btn-secondary" id="back-btn" ' + (state.step === 1 ? "disabled" : "") + '>Back</button>' +
-            '<button type="button" class="btn btn-primary" id="next-btn" disabled>' + (state.step === TOTAL_STEPS ? "See my results" : "Next") + '</button>' +
+            '<button type="button" class="btn btn-primary" id="next-btn" disabled>' + (state.step === total ? "See my results" : "Next") + '</button>' +
           '</div>' +
         '</div>' +
         '<aside class="question-side">' +
           '<div class="side-card">' +
             '<p class="eyebrow-small">Sector context</p>' +
-            '<p class="side-text">' + esc(SECTOR_CONTEXT[state.step]) + '</p>' +
+            '<p class="side-text">' + esc(getSectorContext(id)) + '</p>' +
           '</div>' +
           '<div class="side-card" id="summary-card">' + renderSummary() + '</div>' +
         '</aside>' +
@@ -591,28 +794,37 @@
 
   function renderOptionButton(def, opt, answer) {
     var isMulti = def.type === "multi";
-    var selected = isMulti ? (answer || []).indexOf(opt.label) > -1 : answer === opt.label;
+    var selected = isMulti ? (answer || []).indexOf(opt.value) > -1 : answer === opt.value;
     var roleAttr = isMulti ? 'aria-pressed="' + selected + '"' : 'role="radio" aria-checked="' + selected + '"';
     return (
-      '<button type="button" class="option-card' + (selected ? " selected" : "") + '" data-value="' + esc(opt.label) + '" ' + roleAttr + '>' +
+      '<button type="button" class="option-card' + (selected ? " selected" : "") + '" data-value="' + esc(opt.value) + '" ' + roleAttr + '>' +
         '<span class="option-label">' + esc(opt.label) + '</span>' +
         (opt.hint ? '<span class="option-hint">' + esc(opt.hint) + '</span>' : '') +
       '</button>'
     );
   }
 
+  function scenarioSummaryDisplay() {
+    return (state.answers.scenario || []).map(function (id) {
+      var o = SCENARIO_OPTIONS.filter(function (x) { return x.id === id; })[0];
+      return o ? (isMiddleSchool() ? o.labelMS : o.label) : id;
+    }).join("; ");
+  }
+
   function renderSummary() {
     var lines = [];
     var order = [
       ["careerStage", "Stage"], ["region", "Region"], ["subjects", "Subjects"], ["field", "Field"],
-      ["industry", "Industry"], ["scenario", "Scenario"], ["interests", "Interests"],
+      ["industry", "Industry"], ["freeTime", "Free time"], ["scenario", "Scenario"], ["interests", "Interests"],
       ["activities", "Working style"], ["environments", "Environment"], ["familiarity", "Familiarity"]
     ];
     order.forEach(function (pair) {
       var key = pair[0], label = pair[1];
       var val = state.answers[key];
       if (val == null || (Array.isArray(val) && !val.length)) return;
-      var display = Array.isArray(val) ? val.join(", ") : val;
+      var display;
+      if (key === "scenario") display = scenarioSummaryDisplay();
+      else display = Array.isArray(val) ? val.join(", ") : val;
       lines.push('<div class="summary-row"><span class="summary-key">' + esc(label) + '</span><span class="summary-val">' + esc(display) + '</span></div>');
     });
     if (!lines.length) return '<p class="eyebrow-small">Your answers</p><p class="side-text muted">Your choices will appear here as you go.</p>';
@@ -630,16 +842,24 @@
 
   function handleOptionClick(def, value) {
     if (def.type === "single") {
-      var prevGroup = state.careerStageGroup;
-      state.answers[def.id] = value;
       if (def.id === "careerStage") {
+        var prevStage = state.answers.careerStage;
+        var prevGroup = stageGroupFor(prevStage);
+        var prevMS = prevStage === "Middle School";
         var newGroup = stageGroupFor(value);
-        if (newGroup !== prevGroup) {
+        var newMS = value === "Middle School";
+        state.answers.careerStage = value;
+        if (newGroup !== prevGroup || newMS !== prevMS) {
           delete state.answers.subjects;
           delete state.answers.field;
           delete state.answers.industry;
+          delete state.answers.freeTime;
+          delete state.answers.interests;
+          delete state.answers.activities;
         }
         state.careerStageGroup = newGroup;
+      } else {
+        state.answers[def.id] = value;
       }
     } else {
       var current = state.answers[def.id] || [];
@@ -679,9 +899,11 @@
   }
 
   function goNext() {
-    logEvent("step", { sessionId: state.sessionId, stepId: getStepDefinition(state.step).id, timestamp: Date.now() });
+    var stepList = getStepList();
+    var id = stepList[state.step - 1];
+    logEvent("step", { sessionId: state.sessionId, stepId: id, timestamp: Date.now() });
     state.lastStepReached = Math.max(state.lastStepReached, state.step);
-    if (state.step < TOTAL_STEPS) {
+    if (state.step < stepList.length) {
       state.step++;
       renderQuestion();
     } else {
@@ -694,18 +916,19 @@
     var clusterNamesSorted = Object.keys(scoring.clusterScores).sort(function (a, b) {
       return scoring.clusterScores[b] - scoring.clusterScores[a];
     });
-    var top = rankCareers(scoring);
+    var top = rankCareers(scoring, isMiddleSchool() ? 3 : 5);
     logEvent("complete", {
       sessionId: state.sessionId,
       stage: state.answers.careerStage || "",
       region: state.answers.region || "",
       background: state.answers.subjects ? state.answers.subjects.join("; ") : (state.answers.field || state.answers.industry || ""),
-      scenario: state.answers.scenario || "",
+      scenario: (state.answers.scenario || []).join(" | "),
       cluster1: clusterNamesSorted[0] || "",
       cluster2: clusterNamesSorted[1] || "",
       cluster3: clusterNamesSorted[2] || "",
       topCareer: top[0] ? top[0].career.title : "",
       familiarity: state.answers.familiarity || "",
+      interestAfter: "",
       timestamp: Date.now()
     });
     renderResults();
@@ -739,7 +962,7 @@
 
     var top3 = clusterList.slice(0, 3);
     var topCluster = clusterList[0];
-    var topCareers = rankCareers(scoring);
+    var topCareers = rankCareers(scoring, isMiddleSchool() ? 3 : 5);
 
     var shareUrl = encodeShareUrl();
     if (!state.isRestoredView) {
@@ -752,7 +975,8 @@
     html += renderTakeResultsSection(shareUrl);
     html += renderTransitionCard(topCareers);
     html += renderCareersSection(topCareers);
-    html += renderSkillsSection(topCareers);
+    html += renderInterestAfterCard();
+    if (!isMiddleSchool()) html += renderSkillsSection(topCareers);
     html += renderTrainingSection(topCareers);
     html += renderNextStepsSection();
     html += '<footer class="disclaimer-footer">GeoMatch by Geothermal Rising &middot; Results are guidance, not a prediction. Explore widely.</footer>';
@@ -763,6 +987,7 @@
   }
 
   function renderResultsHero(topCluster, shareUrl) {
+    var showEmailBtn = !(isMiddleSchool() && !CONFIG.middleSchoolEmail);
     return (
       '<section class="results-hero">' +
         '<p class="eyebrow">Your geothermal pathway</p>' +
@@ -770,7 +995,7 @@
         '<p class="hero-desc">' + esc(topCluster.description) + '</p>' +
         '<div class="hero-actions">' +
           '<button type="button" class="btn btn-secondary" id="print-btn">Save as PDF</button>' +
-          '<button type="button" class="btn btn-secondary" id="email-scroll-btn">Email my results</button>' +
+          (showEmailBtn ? '<button type="button" class="btn btn-secondary" id="email-scroll-btn">Email my results</button>' : '') +
           '<button type="button" class="btn btn-secondary" id="copy-link-btn">Copy share link</button>' +
           '<button type="button" class="btn btn-secondary" id="start-over-btn">Start over</button>' +
         '</div>' +
@@ -781,13 +1006,14 @@
   function renderTopClustersSection(top3, maxPossible) {
     var cards = top3.map(function (cluster) {
       var pct = fitPercent(cluster.score, maxPossible);
-      var topReasons = cluster.contributions.slice().sort(function (a, b) { return b.points - a.points; }).slice(0, 3).map(function (c) { return c.label; });
+      var topItems = cluster.contributions.slice().sort(function (a, b) { return b.points - a.points; }).slice(0, 3).map(function (c) { return { type: c.type, raw: c.raw }; });
+      var sentence = sentenceFromTopItems(topItems);
       return (
         '<div class="cluster-card card-tick">' +
           '<h3 class="cluster-name">' + esc(cluster.name) + '</h3>' +
           '<div class="fit-row"><div class="fit-bar"><div class="fit-bar-fill" style="width:' + pct + '%"></div></div><span class="fit-pct">' + pct + '% fit</span></div>' +
           '<p class="cluster-desc">' + esc(cluster.description) + '</p>' +
-          (topReasons.length ? '<p class="cluster-reason">Because of ' + esc(topReasons.join(", ")) + '.</p>' : '') +
+          (sentence ? '<p class="cluster-reason"><strong>Why this fits you:</strong> ' + esc(sentence) + '</p>' : '') +
         '</div>'
       );
     }).join("");
@@ -803,9 +1029,26 @@
   function renderTakeResultsSection(shareUrl) {
     var isLocal = location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
     var qrNote = isLocal ? '<p class="qr-note">QR codes only open on phones once GeoMatch is hosted online.</p>' : "";
+    var msEmailOff = isMiddleSchool() && !CONFIG.middleSchoolEmail;
+    var heading = msEmailOff ? "Save your results" : "Take your results with you";
+
+    if (msEmailOff) {
+      return (
+        '<section class="take-results-section card-tick">' +
+          '<h2 class="section-title">' + heading + '</h2>' +
+          '<p class="email-helper">Scan the QR code or print your results to show a parent or teacher.</p>' +
+          '<div class="qr-panel">' +
+            '<div id="qr-holder" class="qr-holder"></div>' +
+            qrNote +
+            '<p class="share-link-text" id="share-link-text">' + esc(shareUrl) + '</p>' +
+          '</div>' +
+        '</section>'
+      );
+    }
+
     return (
       '<section class="take-results-section card-tick">' +
-        '<h2 class="section-title">Take your results with you</h2>' +
+        '<h2 class="section-title">' + heading + '</h2>' +
         '<div class="take-results-grid">' +
           '<div class="email-panel">' + renderEmailPanel() + '</div>' +
           '<div class="qr-panel">' +
@@ -847,7 +1090,7 @@
     var relevant = (window.GEOMATCH_CAREERS || [])
       .filter(function (c) { return (c.industries_transferable_from || []).indexOf(industry) > -1; });
     var scoring = scoreAnswers();
-    var ranked = rankCareers(scoring);
+    var ranked = rankCareers(scoring, 5);
     var rankedTitles = ranked.map(function (r) { return r.career.title; });
     var ordered = relevant.slice().sort(function (a, b) {
       var ia = rankedTitles.indexOf(a.title), ib = rankedTitles.indexOf(b.title);
@@ -868,36 +1111,153 @@
   }
 
   function renderCareersSection(topCareers) {
+    var ms = isMiddleSchool();
+    var entryLabels = ms ? ENTRY_ROUTE_LABELS_MS : ENTRY_ROUTE_LABELS;
     var cards = topCareers.map(function (item) {
       var career = item.career;
-      var matches = [].concat(item.matchedInterests, item.matchedActivities, item.matchedEnvironments);
-      if (item.matchedField) matches.push(item.matchedField);
-      if (item.industryMatches) matches.push(state.answers.industry);
+      var sentence = careerWhySentence(item);
+      var tasksHtml = ms
+        ? '<div><p class="eyebrow-small">What you\'d do</p><ul class="plain-list">' + career.typical_tasks.slice(0, 2).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>'
+        : '<div><p class="eyebrow-small">Typical tasks</p><ul class="plain-list">' + career.typical_tasks.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>';
+      var detailGrid = ms
+        ? '<div class="career-detail-grid">' + tasksHtml + '</div>'
+        : '<div class="career-detail-grid">' + tasksHtml +
+          '<div><p class="eyebrow-small">Key skills</p><ul class="plain-list">' + career.skills.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
+          '<div><p class="eyebrow-small">Degrees &amp; training</p><ul class="plain-list">' + career.degrees.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
+          '<div><p class="eyebrow-small">Useful courses</p><ul class="plain-list">' + career.courses.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
+          '</div>';
       return (
         '<article class="career-card card-tick">' +
           '<div class="career-card-top">' +
             '<span class="tag tag-moss">' + esc(career.category) + '</span>' +
-            '<span class="tag tag-outline">' + esc(ENTRY_ROUTE_LABELS[career.entry_route] || career.entry_route) + '</span>' +
+            '<span class="tag tag-outline">' + esc(entryLabels[career.entry_route] || career.entry_route) + '</span>' +
           '</div>' +
           '<h3 class="career-title">' + esc(career.title) + '</h3>' +
           '<p class="career-desc">' + esc(career.description) + '</p>' +
-          (matches.length ? '<p class="career-matches">Matches you on: ' + esc(uniq(matches).join(", ")) + '</p>' : "") +
-          '<div class="career-detail-grid">' +
-            '<div><p class="eyebrow-small">Typical tasks</p><ul class="plain-list">' + career.typical_tasks.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
-            '<div><p class="eyebrow-small">Key skills</p><ul class="plain-list">' + career.skills.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
-            '<div><p class="eyebrow-small">Degrees &amp; training</p><ul class="plain-list">' + career.degrees.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
-            '<div><p class="eyebrow-small">Useful courses</p><ul class="plain-list">' + career.courses.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + '</ul></div>' +
-          '</div>' +
+          (sentence ? '<p class="career-matches"><strong>Why it suits you:</strong> ' + esc(sentence) + '</p>' : "") +
+          detailGrid +
         '</article>'
       );
     }).join("");
+    var jobBoardHtml = (!ms && CONFIG.links.jobBoard)
+      ? '<p class="job-board-link">' + extLink("jobBoard", "See current geothermal job openings →") + '</p>'
+      : "";
     return (
       '<section class="careers-section">' +
         '<div class="section-header"><p class="eyebrow-small">Top matches</p><h2 class="section-title">Careers to explore</h2></div>' +
         '<div class="career-grid">' + cards + '</div>' +
+        jobBoardHtml +
       '</section>'
     );
   }
+
+  /* ============================== Interest after results (Section 8) ============================== */
+
+  var INTEREST_AFTER_OPTIONS = ["Not really", "A little curious", "Very interested"];
+
+  function renderInterestAfterCard() {
+    var current = state.interestAfter;
+    var btns = INTEREST_AFTER_OPTIONS.map(function (o) {
+      var sel = current === o;
+      return '<button type="button" class="btn btn-secondary interest-after-btn' + (sel ? " selected" : "") + '" data-value="' + esc(o) + '" aria-pressed="' + sel + '">' + esc(o) + '</button>';
+    }).join("");
+    return (
+      '<section class="interest-after-card card-tick" id="interest-after-card">' +
+        '<h3 class="interest-after-title">After seeing your results, how interested are you in a career in geothermal?</h3>' +
+        '<div class="interest-after-buttons">' + btns + '</div>' +
+        '<p class="interest-after-thanks" id="interest-after-thanks"' + (current ? "" : " hidden") + '>Thanks!</p>' +
+      '</section>'
+    );
+  }
+
+  function recordInterestAfter(value) {
+    state.interestAfter = value;
+    if (state.isRestoredView) return;
+    try {
+      var events = safeLocalStorageGet("geomatch_events", []);
+      events.forEach(function (e) { if (e.type === "complete" && e.sessionId === state.sessionId) e.interestAfter = value; });
+      safeLocalStorageSet("geomatch_events", events);
+    } catch (e) { /* ignore */ }
+    logEvent("interest_after", { sid: state.sessionId, value: value, t: Date.now() });
+  }
+
+  /* ============================== Links (Section 9) ============================== */
+
+  function extLink(key, text) {
+    var url = CONFIG.links[key];
+    if (!url) return "";
+    return '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="ext-link" data-link-key="' + esc(key) + '">' + esc(text) + '</a>';
+  }
+
+  function trackLinkClick(key) {
+    logEvent("link_click", { which: key, sid: state.sessionId, t: Date.now() });
+  }
+
+  function connectLineHtml() {
+    var g = CONFIG.links.geothermalRising ? extLink("geothermalRising", "Geothermal Rising") : "Geothermal Rising";
+    var e = CONFIG.links.events ? extLink("events", "upcoming events") : "upcoming events";
+    return "Connect with " + g + " and see " + e + ".";
+  }
+
+  function connectLineText() {
+    return "- Connect with Geothermal Rising" + (CONFIG.links.geothermalRising ? " (" + CONFIG.links.geothermalRising + ")" : "") +
+      " and see upcoming events" + (CONFIG.links.events ? " (" + CONFIG.links.events + ")" : "") + ".";
+  }
+
+  function getNextStepsItems() {
+    var group = state.careerStageGroup;
+    var items = [];
+    if (isMiddleSchool()) {
+      var subj = (state.answers.subjects || []).slice(0, 2);
+      items.push({ text: "Keep going with " + (subj.length ? joinAnd(subj) : "your favourite subjects") + " at school." });
+      items.push({ text: "Try something hands-on: a science fair, coding club, nature trip or building project." });
+      items.push({ text: "Ask a teacher or family member to help you learn more about energy careers." });
+      if (CONFIG.links.learn) items.push({ text: "Learn more about geothermal energy", linkKey: "learn" });
+    } else if (group === "school") {
+      items.push({ text: "Keep up the subjects that lead to your matched fields." });
+      items.push({ text: "Look for science fairs, field trips, coding clubs and job shadowing." });
+      items.push({ text: "Ask a teacher or counsellor about programs in these areas." });
+      if (CONFIG.links.studentResources) items.push({ text: "Explore student resources", linkKey: "studentResources" });
+      if (CONFIG.links.studentCommittee) items.push({ text: "Join the Geothermal Rising Student Committee", linkKey: "studentCommittee" });
+    } else if (group === "tertiary") {
+      items.push({ text: "Add a specific course from your matched list to your next term." });
+      items.push({ text: "Look for internships, field schools and research projects." });
+      items.push({ text: "Build a portfolio piece related to your top matched career." });
+      items.push({ text: "Attend a conference or webinar — many offer student rates." });
+      if (CONFIG.links.jobBoard) items.push({ text: "Browse the Geothermal Rising job board", linkKey: "jobBoard" });
+      if (CONFIG.links.studentResources) items.push({ text: "Explore student resources", linkKey: "studentResources" });
+      if (CONFIG.links.studentCommittee) items.push({ text: "Join the Geothermal Rising Student Committee", linkKey: "studentCommittee" });
+      if (CONFIG.links.membership) items.push({ text: "Become a Geothermal Rising member", linkKey: "membership" });
+    } else {
+      items.push({ text: "Rewrite your CV in geothermal terms using your transferable skills." });
+      items.push({ text: "Take short training in the courses listed for your top matches." });
+      items.push({ text: "Explore roles like your top match on geothermal job boards and professional networks." });
+      if (CONFIG.links.jobBoard) items.push({ text: "Browse the Geothermal Rising job board", linkKey: "jobBoard" });
+      if (CONFIG.links.membership) items.push({ text: "Become a Geothermal Rising member", linkKey: "membership" });
+    }
+    return items;
+  }
+
+  function nextStepsHtml() {
+    var items = getNextStepsItems();
+    var lis = items.map(function (it) {
+      return "<li>" + (it.linkKey ? extLink(it.linkKey, it.text) : esc(it.text)) + "</li>";
+    });
+    lis.push("<li>" + connectLineHtml() + "</li>");
+    return lis.join("");
+  }
+
+  function nextStepsPlainTextLines() {
+    var items = getNextStepsItems();
+    var lines = items.map(function (it) {
+      if (it.linkKey && CONFIG.links[it.linkKey]) return "- " + it.text + ": " + CONFIG.links[it.linkKey];
+      return "- " + it.text;
+    });
+    lines.push(connectLineText());
+    return lines;
+  }
+
+  /* ============================== Skills / training / next steps ============================== */
 
   function renderSkillsSection(topCareers) {
     var skills = [];
@@ -913,14 +1273,18 @@
 
   function renderTrainingSection(topCareers) {
     var group = state.careerStageGroup;
+    var ms = isMiddleSchool();
     var careers = topCareers.map(function (t) { return t.career; });
     var fields = uniq([].concat.apply([], careers.map(function (c) { return c.fields || []; })));
 
     if (group === "school") {
-      var subjects = SUBJECT_OPTIONS.filter(function (subject) {
-        return SUBJECT_FIELD_MAP[subject].some(function (f) { return fields.indexOf(f) > -1; });
+      var subjectOptions = ms ? MS_SUBJECT_OPTIONS : SUBJECT_OPTIONS;
+      var subjectMap = ms ? MS_SUBJECT_FIELD_MAP : SUBJECT_FIELD_MAP;
+      var subjects = subjectOptions.filter(function (subject) {
+        return subjectMap[subject].some(function (f) { return fields.indexOf(f) > -1; });
       });
-      var entryRoutes = uniq(careers.map(function (c) { return c.entry_route; })).map(function (r) { return ENTRY_ROUTE_LABELS[r] || r; });
+      var entryLabels = ms ? ENTRY_ROUTE_LABELS_MS : ENTRY_ROUTE_LABELS;
+      var entryRoutes = uniq(careers.map(function (c) { return c.entry_route; })).map(function (r) { return entryLabels[r] || r; });
       return (
         '<section class="training-section card-tick">' +
           '<h2 class="section-title">What to study next</h2>' +
@@ -947,33 +1311,10 @@
   }
 
   function renderNextStepsSection() {
-    var group = state.careerStageGroup;
-    var items = [];
-    if (group === "school") {
-      items = [
-        "Keep up the subjects that lead to your matched fields.",
-        "Look for science fairs, field trips, coding clubs and job shadowing.",
-        "Ask a teacher or counsellor about programs in these areas."
-      ];
-    } else if (group === "tertiary") {
-      items = [
-        "Add a specific course from your matched list to your next term.",
-        "Look for internships, field schools and research projects.",
-        "Build a portfolio piece related to your top matched career.",
-        "Attend a conference or webinar — many offer student rates."
-      ];
-    } else {
-      items = [
-        "Rewrite your CV in geothermal terms using your transferable skills.",
-        "Take short training in the courses listed for your top matches.",
-        "Explore roles like your top match on geothermal job boards and professional networks."
-      ];
-    }
-    items.push("Connect with Geothermal Rising for events, news and opportunities.");
     return (
       '<section class="next-steps-section card-tick">' +
         '<h2 class="section-title">Next steps</h2>' +
-        '<ul class="plain-list next-steps-list">' + items.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + '</ul>' +
+        '<ul class="plain-list next-steps-list">' + nextStepsHtml() + '</ul>' +
       '</section>'
     );
   }
@@ -984,7 +1325,8 @@
     renderQrCode(shareUrl);
 
     $("print-btn").addEventListener("click", function () { window.print(); });
-    $("email-scroll-btn").addEventListener("click", function () {
+    var emailScrollBtn = $("email-scroll-btn");
+    if (emailScrollBtn) emailScrollBtn.addEventListener("click", function () {
       var panel = document.querySelector(".take-results-section");
       if (panel) panel.scrollIntoView({ behavior: "smooth" });
       var input = $("email-input");
@@ -1005,6 +1347,24 @@
 
     var sendBtn = $("send-email-btn");
     if (sendBtn) sendBtn.addEventListener("click", function () { handleSendEmail(shareUrl, topCluster, top3, topCareers); });
+
+    Array.prototype.slice.call(document.querySelectorAll(".interest-after-btn")).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var value = btn.getAttribute("data-value");
+        recordInterestAfter(value);
+        Array.prototype.slice.call(document.querySelectorAll(".interest-after-btn")).forEach(function (b) {
+          var isSel = b === btn;
+          b.classList.toggle("selected", isSel);
+          b.setAttribute("aria-pressed", String(isSel));
+        });
+        var thanks = $("interest-after-thanks");
+        if (thanks) thanks.hidden = false;
+      });
+    });
+
+    Array.prototype.slice.call(document.querySelectorAll("#screen-results .ext-link")).forEach(function (a) {
+      a.addEventListener("click", function () { trackLinkClick(a.getAttribute("data-link-key")); });
+    });
   }
 
   function renderQrCode(shareUrl) {
@@ -1173,7 +1533,8 @@
 
     var clusterLines = top3.map(function (c) { return "- " + c.name + " (" + fitPercent(c.score, maxPossible) + "% fit)"; }).join("\n");
     var careerLines = topCareers.map(function (item) {
-      return "- " + item.career.title + " (" + (ENTRY_ROUTE_LABELS[item.career.entry_route] || item.career.entry_route) + "): " + item.career.description;
+      var entryLabels = isMiddleSchool() ? ENTRY_ROUTE_LABELS_MS : ENTRY_ROUTE_LABELS;
+      return "- " + item.career.title + " (" + (entryLabels[item.career.entry_route] || item.career.entry_route) + "): " + item.career.description;
     }).join("\n");
     var skills = uniq([].concat.apply([], topCareers.map(function (t) { return t.career.skills || []; }))).slice(0, 6);
     var fields = uniq([].concat.apply([], topCareers.map(function (t) { return t.career.fields || []; })));
@@ -1184,15 +1545,15 @@
       var degrees = uniq([].concat.apply([], topCareers.map(function (t) { return t.career.degrees || []; }))).slice(0, 6);
       studyLines = degrees.map(function (d) { return "- " + d; }).join("\n");
     }
-    var nextSteps = nextStepsPlainList();
+    var nextSteps = nextStepsPlainTextLines();
 
     var text =
       "Here are your GeoMatch geothermal career results.\n\n" +
       "Top clusters:\n" + clusterLines + "\n\n" +
       "Top careers:\n" + careerLines + "\n\n" +
-      "Skills to develop:\n" + skills.map(function (s) { return "- " + s; }).join("\n") + "\n\n" +
+      (isMiddleSchool() ? "" : "Skills to develop:\n" + skills.map(function (s) { return "- " + s; }).join("\n") + "\n\n") +
       (state.careerStageGroup === "school" ? "What to study next:\n" : "Degrees and training:\n") + studyLines + "\n\n" +
-      "Next steps:\n" + nextSteps.map(function (s) { return "- " + s; }).join("\n") + "\n\n" +
+      "Next steps:\n" + nextSteps.join("\n") + "\n\n" +
       "Reopen your full results: " + shareUrl + "\n\n" +
       "GeoMatch by Geothermal Rising. Results are guidance, not a prediction. You received this because you requested it at GeoMatch. No further emails will be sent.";
 
@@ -1208,8 +1569,12 @@
       '<h1 style="font-family:\'Red Hat Display\',Tahoma,sans-serif;">Your GeoMatch results</h1>' +
       '<p>Here are your GeoMatch geothermal career results.</p>' +
       '<h2>Top clusters</h2><ul>' + top3.map(function (c) { return "<li>" + esc(c.name) + " (" + fitPercent(c.score, maxPossible) + "% fit)</li>"; }).join("") + '</ul>' +
-      '<h2>Top careers</h2><ul>' + topCareers.map(function (item) { return "<li><strong>" + esc(item.career.title) + "</strong> (" + esc(ENTRY_ROUTE_LABELS[item.career.entry_route] || item.career.entry_route) + "): " + esc(item.career.description) + "</li>"; }).join("") + '</ul>' +
-      '<h2>Skills to develop</h2><ul>' + skills.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + '</ul>' +
+      '<h2>Top careers</h2><ul>' + topCareers.map(function (item) {
+        var entryLabels = isMiddleSchool() ? ENTRY_ROUTE_LABELS_MS : ENTRY_ROUTE_LABELS;
+        return "<li><strong>" + esc(item.career.title) + "</strong> (" + esc(entryLabels[item.career.entry_route] || item.career.entry_route) + "): " + esc(item.career.description) + "</li>";
+      }).join("") + '</ul>' +
+      (isMiddleSchool() ? "" : '<h2>Skills to develop</h2><ul>' + skills.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + '</ul>') +
+      '<h2>Next steps</h2><ul>' + nextStepsHtml() + '</ul>' +
       '<p style="text-align:center;margin:24px 0;">' +
       '<a href="' + esc(shareUrl) + '" style="background:#FDC40F;color:#000;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;display:inline-block;">Reopen your full results</a>' +
       '</p>' +
@@ -1217,13 +1582,6 @@
       '</div>';
 
     return { subject: subject, text: text, textShort: textShort, html: html };
-  }
-
-  function nextStepsPlainList() {
-    var group = state.careerStageGroup;
-    if (group === "school") return ["Keep up the subjects that lead to your matched fields.", "Look for science fairs, field trips, coding clubs and job shadowing.", "Ask a teacher or counsellor about programs in these areas.", "Connect with Geothermal Rising for events, news and opportunities."];
-    if (group === "tertiary") return ["Add a specific course from your matched list to your next term.", "Look for internships, field schools and research projects.", "Build a portfolio piece related to your top matched career.", "Connect with Geothermal Rising for events, news and opportunities."];
-    return ["Rewrite your CV in geothermal terms using your transferable skills.", "Take short training in the courses listed for your top matches.", "Explore roles like your top match on geothermal job boards and professional networks.", "Connect with Geothermal Rising for events, news and opportunities."];
   }
 
   function buildEmailRecord(email, followUp, guardianConsent, topCluster, topCareers, method) {
@@ -1243,7 +1601,8 @@
       familiarity: state.answers.familiarity || "",
       followUp: !!followUp,
       guardianConsent: guardianConsent === null ? "" : !!guardianConsent,
-      sessionId: state.sessionId
+      sessionId: state.sessionId,
+      interestAfter: state.interestAfter || ""
     };
   }
 
@@ -1263,7 +1622,7 @@
       safeLocalStorageSet("geomatch_events", events);
     } catch (e) { /* ignore */ }
 
-    if (type === "complete" && CONFIG.analyticsEndpoint) {
+    if (CONFIG.analyticsEndpoint && (type === "complete" || type === "link_click" || type === "interest_after")) {
       try {
         fetch(CONFIG.analyticsEndpoint, {
           method: "POST",
@@ -1337,6 +1696,22 @@
     var mailtoCount = emails.filter(function (e) { return e.method === "mailto"; }).length;
     var latestEmails = emails.slice(-20).reverse();
 
+    var interestAnswered = completes.filter(function (c) { return c.interestAfter; });
+    var interestRows = tally(interestAnswered, "interestAfter");
+    var responseRate = completes.length ? Math.round((interestAnswered.length / completes.length) * 100) : 0;
+    var familiarityVals = uniq(completes.map(function (c) { return c.familiarity || "(blank)"; }));
+    var crossTableHtml = '<div class="admin-table-card"><h3>Prior familiarity &times; interest after results</h3>' +
+      '<table class="admin-table"><thead><tr><th></th>' + INTEREST_AFTER_OPTIONS.map(function (v) { return "<th>" + esc(v) + "</th>"; }).join("") + '</tr></thead><tbody>' +
+      familiarityVals.map(function (fv) {
+        return "<tr><td>" + esc(fv) + "</td>" + INTEREST_AFTER_OPTIONS.map(function (iv) {
+          var count = completes.filter(function (c) { return (c.familiarity || "(blank)") === fv && c.interestAfter === iv; }).length;
+          return "<td>" + count + "</td>";
+        }).join("") + "</tr>";
+      }).join("") + '</tbody></table></div>';
+
+    var linkClicks = events.filter(function (e) { return e.type === "link_click"; });
+    var linkClickRows = tally(linkClicks, "which");
+
     $("screen-admin").innerHTML =
       '<div class="admin-wrap">' +
         '<div class="admin-header"><h1>Staff view &middot; this device only</h1><button type="button" class="btn btn-secondary" id="admin-back-btn">Back to app</button></div>' +
@@ -1354,6 +1729,17 @@
           tableHtml("Where sessions ended (last step reached)", dropoffRows) +
         '</div>' +
         '<button type="button" class="btn btn-secondary" id="download-csv-btn">Download CSV</button>' +
+        '<div class="admin-email-panel">' +
+          '<h2>Interest after results</h2>' +
+          '<div class="admin-stat-row">' +
+            '<div class="stat"><div class="stat-num">' + responseRate + '%</div><div class="stat-label">Response rate</div></div>' +
+          '</div>' +
+          '<div class="admin-table-grid">' + tableHtml("Interest after results", interestRows) + crossTableHtml + '</div>' +
+        '</div>' +
+        '<div class="admin-email-panel">' +
+          '<h2>Link clicks</h2>' +
+          '<div class="admin-table-grid">' + tableHtml("Clicks by link", linkClickRows) + '</div>' +
+        '</div>' +
         '<div class="admin-email-panel">' +
           '<h2>Email records</h2>' +
           '<div class="admin-stat-row">' +
@@ -1378,8 +1764,8 @@
     showScreen("screen-admin");
 
     $("admin-back-btn").addEventListener("click", goHome);
-    $("download-csv-btn").addEventListener("click", function () { downloadCsv(completes, ["sessionId", "stage", "region", "background", "scenario", "cluster1", "cluster2", "cluster3", "topCareer", "familiarity", "timestamp"], "geomatch_completions.csv"); });
-    $("download-email-csv-btn").addEventListener("click", function () { downloadCsv(emails, ["timestamp", "email", "method", "stage", "region", "background", "cluster1", "cluster2", "cluster3", "career1", "familiarity", "followUp", "guardianConsent", "sessionId"], "geomatch_emails.csv"); });
+    $("download-csv-btn").addEventListener("click", function () { downloadCsv(completes, ["sessionId", "stage", "region", "background", "scenario", "cluster1", "cluster2", "cluster3", "topCareer", "familiarity", "interestAfter", "timestamp"], "geomatch_completions.csv"); });
+    $("download-email-csv-btn").addEventListener("click", function () { downloadCsv(emails, ["timestamp", "email", "method", "stage", "region", "background", "cluster1", "cluster2", "cluster3", "career1", "familiarity", "followUp", "guardianConsent", "interestAfter", "sessionId"], "geomatch_emails.csv"); });
     $("clear-emails-btn").addEventListener("click", function () {
       if (confirm("Clear all email records from this device? This cannot be undone.")) {
         safeLocalStorageSet("geomatch_emails", []);
@@ -1459,6 +1845,10 @@
     if (hash.indexOf("#results=") === 0) {
       var answers = decodeShareHash(hash);
       if (answers) {
+        if (typeof answers.scenario === "string") {
+          var legacyOpt = SCENARIO_OPTIONS.filter(function (o) { return o.label === answers.scenario; })[0];
+          answers.scenario = legacyOpt ? [legacyOpt.id] : [];
+        }
         state.answers = answers;
         state.careerStageGroup = stageGroupFor(answers.careerStage);
         state.isRestoredView = true;
