@@ -151,11 +151,20 @@ function handleEmail(payload, ss) {
   return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
 }
 
+// Turns the raw epoch-ms timestamp into a readable date for the "Date Collected"
+// column. Sheets auto-detects the formatted string and stores it as a real date
+// value, so it stays sortable/filterable rather than being stuck as plain text.
+function formatDateCollected(ms) {
+  if (!ms) return "";
+  return Utilities.formatDate(new Date(ms), Session.getScriptTimeZone(), "MMM d, yyyy h:mm a");
+}
+
 function handleAnalytics(payload, ss) {
   var sheet = ss.getSheetByName("Completions") || ss.insertSheet("Completions");
   var headers = ["type","sessionId","stage","region","background","scenario","cluster1","cluster2","cluster3","topCareer","familiarity","interestAfter","timestamp"];
-  if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+  if (sheet.getLastRow() === 0) sheet.appendRow(headers.concat(["Date Collected"]));
   var row = headers.map(function (h) { return payload[h] != null ? payload[h] : ""; });
+  row.push(formatDateCollected(payload.timestamp));
   sheet.appendRow(row);
   return ContentService.createTextOutput(JSON.stringify({ ok: true })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -196,7 +205,11 @@ function handleLinkClick(payload, ss) {
 
 Analytics and link-click requests are sent with `mode: "no-cors"`, so the app never sees (or depends on) the response — if the device is offline or the endpoint fails, it fails silently and the on-device copy is unaffected. Email requests are sent as a normal `fetch` (the Apps Script response includes `access-control-allow-origin: *`), so the app can show a real success/failure message.
 
-**If you already had the old (pre-Middle-School-update) script deployed:** replace its code with the version above and redeploy the *same* deployment as a **new version** (Deploy → Manage deployments → pencil icon → Version: New version → Deploy) so the URL — and therefore `CONFIG`'s endpoints — doesn't change. The existing "Completions" and "Emails" tabs were created with an older, shorter set of columns; either delete those two tabs (they'll be recreated with the right headers on the next request) or manually add the missing `interestAfter` column so new rows line up correctly.
+**If you already had an older script deployed:** replace its code with the version above and redeploy the *same* deployment as a **new version** (Deploy → Manage deployments → pencil icon → Version: New version → Deploy) so the URL — and therefore `CONFIG`'s endpoints — doesn't change. The existing "Completions" and "Emails" tabs were created with an older, shorter set of columns; either delete those two tabs (they'll be recreated with the right headers on the next request) or manually add the missing columns so new rows line up correctly.
+
+**Editing the Sheet directly:** `handleAnalytics` and `handleEmail` write new rows to fixed column positions, not by matching header names — so adding, removing or reordering a column in the middle of either tab will misalign every row appended after that point. It's safe to add a column at the very end of a tab (e.g. a note column), or to reorder/insert a column as long as you also update the `headers`/`columns` array in the script to match. `handleInterestAfter` is the exception — it looks up `sessionId` and `interestAfter` by header name, so it tolerates column reordering on its own.
+
+**Backfilling a new column onto existing rows:** write a one-off function in the Apps Script editor (e.g. loop over `sheet.getRange(...)` and `setValues(...)`), run it once via the Run button, then delete it. This is more reliable than editing many cells by hand in the Sheets UI, and it's how the "Date Collected" column above was backfilled onto rows that existed before it was added.
 
 ### 6.2 Exporting records
 
